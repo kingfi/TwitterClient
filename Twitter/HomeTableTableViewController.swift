@@ -10,8 +10,35 @@ import UIKit
 
 class HomeTableTableViewController: UITableViewController {
 
+    var tweetArray = [NSDictionary]()
+    var numberOfTweets: Int!
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        loadTweets()
+    }
+    
+    func loadTweets(){
+        
+        let myUrl = "https://api.twitter.com/1.1/statuses/home_timeline.json"
+        let myParams = ["count" : 10]
+
+        TwitterAPICaller.client?.getDictionariesRequest(url: myUrl, parameters: myParams, success: { (tweets: [NSDictionary]) in
+            
+            self.tweetArray.removeAll()
+            
+            for tweet in tweets {
+                self.tweetArray.append(tweet)
+            }
+            
+            self.tableView.reloadData()
+            
+        }, failure: { (Error) in
+            print("Could not retrieve tweets")
+        })
+        
+        
     }
 
     @IBAction func onLogout(_ sender: Any) {
@@ -23,11 +50,24 @@ class HomeTableTableViewController: UITableViewController {
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "tweetCell", for: indexPath) as! TweetCellTableViewCell
         
-        cell.profileName.text =  "Some Name"
+        let user = tweetArray[indexPath.row]["user"] as! NSDictionary
         
-        cell.tweetContent.text = "Something Else"
+        
+        
+        
+        cell.profileName.text = user["name"] as? String
+        
+        cell.tweetContent.text = tweetArray[indexPath.row]["text"] as? String
+        
+        let imageUrl = URL(string: (user["profile_image_url_https"] as? String)!)
+        let data = try? Data(contentsOf: imageUrl!)
+        
+        if let  imageData = data {
+            cell.profileImage.image = UIImage(data: imageData)
+        }
         
         
         
@@ -41,7 +81,7 @@ class HomeTableTableViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 5
+        return tweetArray.count
     }
     /*
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
